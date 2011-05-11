@@ -32,6 +32,22 @@ sub mpc
 	return @lines;
 }
 
+sub usage()
+{
+	print STDERR "Usage: $0 [-v]\n";
+	exit 1;
+}
+
+my $verbose = 0;
+
+for(@ARGV){
+	if($_ eq '-v'){
+		$verbose = 1;
+	}else{
+		usage();
+	}
+}
+
 $MPD_HOST = $ENV{MPD_HOST} || 'localhost';
 $MPD_PORT = $ENV{MPD_PORT} || '6600';
 
@@ -52,13 +68,14 @@ for(@lines){
 	$mpd{$1} = $2 if /^([^ ]+): (.*)/;
 }
 
+
 for my $mpdk (keys %mpd){
 	for my $optk (keys %opts){
 		$opts{$optk}->[1] = !!$mpd{$mpdk} if $optk eq $mpdk;
 	}
 }
 
-print "$mpd{Title} - $mpd{Artist}\n";
+print "$mpd{Title} - $mpd{Artist}\n" if $mpd{state} eq 'play' || $verbose;
 
 for(sort values %opts){
 	if($_->[1]){
