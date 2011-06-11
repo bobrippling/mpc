@@ -75,7 +75,11 @@ for my $mpdk (keys %mpd){
 	}
 }
 
-print "$mpd{Title} - $mpd{Artist}\n" if $mpd{state} eq 'play' || $verbose;
+if($mpd{state} eq 'play' || $verbose){
+	print $mpd{Title};
+	print " - " if length $mpd{Title};
+	print $mpd{Artist}, "\n";
+}
 
 for(sort values %opts){
 	if($_->[1]){
