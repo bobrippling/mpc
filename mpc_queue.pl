@@ -107,7 +107,16 @@ if(@ARGV == 0){
 	$query = 0;
 }
 
+sub escape_regex($)
+{
+	local $_ = shift;
+	s/[][()]/\\&/g;
+	$_;
+}
+
 get_playlist();
+
+$ARGV[$_] = escape_regex($ARGV[$_]) for 0 .. $#ARGV;
 
 for(@ARGV){
 	my $id = getid($_);
@@ -144,7 +153,20 @@ if($bg){
 	chdir '/';
 }
 
+my $was_repeat = !!(`mpc | tail -1` =~ /repeat: *on/);
+
+sub fin()
+{
+	# has to be after `stop`
+	mpc('single off');
+	mpc('repeat on') if $was_repeat;
+	exit;
+}
+
 mpc('stop') if $stop_before;
+
+$SIG{INT}  = \&fin;
+$SIG{TERM} = \&fin;
 
 for(@ARGV){
 	mpc('single on');
@@ -160,6 +182,5 @@ if($stop_after){
 	sleep 1 while playing();
 	mpc('stop');
 }
-# has to be after `stop`
-mpc('single off');
-mpc('repeat on');
+
+fin();
