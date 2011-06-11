@@ -1,27 +1,19 @@
 #!/bin/sh
 
-usage(){
-	echo "Usage: $0 [-time]" >&2
-	exit 1
-}
-
-set -e
-
-n=120
-
-if [ $# -eq 1 ]
+if [ $# -ne 0 ]
 then
-	if echo $1 | grep '^-[0-9]\+$' > /dev/null
-	then
-		n=`echo $1 | sed 's/^.//'`
-	else
-		usage
-	fi
-elif [ $# -ne 0 ]
-then usage
+	echo "Usage: $0" >&2
+	exit 1
 fi
 
-mpc_single.sh
-mpc single off
-sleep $n
-mpc play
+fin(){
+	mpc single off > /dev/null
+}
+
+trap fin EXIT
+
+{
+	mpc single on
+	mpc repeat off
+} > /dev/null
+mpc_wait.sh
