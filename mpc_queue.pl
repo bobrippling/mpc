@@ -95,6 +95,9 @@ sub basename($)
 	return $_[0];
 }
 
+
+$| = 1;
+
 die "$0: need password\n" if pwtest();
 
 if(@ARGV == 0){
@@ -106,6 +109,13 @@ if(@ARGV == 0){
 	print STDERR "$bnam: assuming yes (-q)\n" if $query;
 	$query = 0;
 }
+
+#if(system('pgrep "^mpc_queue.pl$" > /dev/null') == 0){
+#	print "something already queued, go anyway? (y/n) ";
+#	my $a = <STDIN>;
+#	exit 1 if not defined $a || $a !~ /^y(es)?$/i;
+#}
+
 
 sub escape_regex($)
 {
