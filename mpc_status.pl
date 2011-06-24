@@ -76,9 +76,13 @@ for my $mpdk (keys %mpd){
 }
 
 if($mpd{state} eq 'play' || $verbose){
-	print $mpd{Title};
-	print " - " if length $mpd{Title};
-	print $mpd{Artist}, "\n";
+	if(defined $mpd{Title} and defined $mpd{Artist}){
+		print $mpd{Title};
+		print " - " if length $mpd{Title};
+		print $mpd{Artist}, "\n";
+	}else{
+		print "unknown song\n";
+	}
 }
 
 for(sort values %opts){
