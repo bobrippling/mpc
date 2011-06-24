@@ -2,56 +2,32 @@
 use warnings;
 use strict;
 
-sub usage();
 
-my $dry   = 0;
-my $bg    = 0;
-my $query = 0;
-my($stop_after, $stop_before) = 0;
 my %playlist;
-
+my @poses;
 my @argv = @ARGV;
+my $was_repeat;
+my $bg = 0;
 
-for(@argv){
-	if($_ eq '-n'){
-		$dry = 1;
-	}elsif($_ eq '-f'){
-		$bg = 1;
-	}elsif($_ eq '-q'){
-		$query = 1;
-	}elsif($_ eq '-s'){
-		$stop_before = 1;
-	}elsif($_ eq '-S'){
-		$stop_after = 1;
-	}elsif($_ eq '--help'){
-		usage();
-	}else{
-		shift @ARGV if $_ eq '--';
-		last;
-	}
-	shift @ARGV;
-}
-
-sub get_playlist()
-{
-	for(map { chomp; $_ } `mpc playlist | nl`){
-		die "couldn't parse \"$_\"\n" unless /^\s+([0-9]+)\s+(.*)$/;
-		$playlist{$1} = $2;
-	}
-}
 
 sub usage()
 {
 	my $out = <<"!";
 Usage: $0 [OPT] song1 [song2 [song3...]]
-  -n: Dry run
   -f: Fork to background
-  -q: Query before running
-  -s: Stop playing before queuing
-  -S: Stop playing after queue
 !
 	print STDERR $out;
 	exit 1;
+}
+
+sub get_playlist()
+{
+	my %playlist;
+	for(map { chomp; $_ } `mpc playlist | nl`){
+		die "couldn't parse \"$_\"\n" unless /^\s+([0-9]+)\s+(.*)$/;
+		$playlist{$1} = $2;
+	}
+	return %playlist;
 }
 
 sub playing()
@@ -72,51 +48,6 @@ sub pwtest()
 	return !!$ret;
 }
 
-sub getid($)
-{
-	my $reg = shift;
-
-	for my $k (keys %playlist){
-		return $k if $playlist{$k} =~ m/$reg/i;
-	}
-	die "Couldn't find /$reg/ (key)\n";
-}
-
-sub sigh()
-{
-	print "caught SIG$_[0]\n";
-	# FIXME: restore 'single' and what not?
-	exit 1;
-}
-
-sub basename($)
-{
-	return $1 if $_[0] =~ m#.*/([^/]+)$#;
-	return $_[0];
-}
-
-
-$| = 1;
-
-die "$0: need password\n" if pwtest();
-
-if(@ARGV == 0){
-	my $bnam = basename($0);
-
-	print STDERR "$bnam: reading from stdin...\n";
-	@ARGV = map { chomp; $_ } <STDIN>;
-
-	print STDERR "$bnam: assuming yes (-q)\n" if $query;
-	$query = 0;
-}
-
-#if(system('pgrep "^mpc_queue.pl$" > /dev/null') == 0){
-#	print "something already queued, go anyway? (y/n) ";
-#	my $a = <STDIN>;
-#	exit 1 if not defined $a || $a !~ /^y(es)?$/i;
-#}
-
-
 sub escape_regex($)
 {
 	local $_ = shift;
@@ -124,27 +55,65 @@ sub escape_regex($)
 	$_;
 }
 
-get_playlist();
+sub fin()
+{
+	# has to be after `stop`
+	mpc('single off');
+	mpc('repeat on') if $was_repeat;
+	exit;
+}
 
+# -- start
+
+for(@argv){
+	if($_ eq '-f'){
+		$bg = 1;
+	}else{
+		shift @ARGV if $_ eq '--';
+		last;
+	}
+	shift @ARGV;
+}
+
+$| = 1;
+
+die "$0: need password\n" if pwtest();
+
+if(@ARGV == 0){
+	print STDERR "$0: reading from stdin...\n";
+	@ARGV = map { chomp; $_ } <STDIN>;
+}
+
+%playlist = get_playlist();
 $ARGV[$_] = escape_regex($ARGV[$_]) for 0 .. $#ARGV;
 
+
 for(@ARGV){
-	my $id = getid($_);
-	print "queued \"$playlist{$id}\" ($id) for /$_/\n";
-}
+	my $reg = shift;
+	my $pos;
+	my $num = 0;
 
-if($query){
-	$| = 1;
-	print "go? (Y/n) ";
-	my $in = <STDIN>;
-	exit 1 unless defined $in;
-	chomp $in;
-	exit 1 unless !length($in) || $in =~ /^y$/i;
-}
+	if($reg =~ /^-([0-9]+)$/){
+		$pos = $1 + 1;
+		$num = 1;
+	}else{
+		for my $k (keys %playlist){
+			if($playlist{$k} =~ m/$reg/i){
+				$pos = $k;
+				last;
+			}
+		}
+		die "Couldn't find /$reg/ (key)\n" unless $pos;
+	}
 
-if($dry){
-	print "no action taken - dry run\n";
-	exit 0;
+	push @poses, $pos;
+
+	print "queued \"$playlist{$pos}\" ($pos) for ";
+	if($num){
+		print "pos $pos\n";
+	}else{
+		print "/$reg/\n";
+	}
 }
 
 if($bg){
@@ -163,34 +132,18 @@ if($bg){
 	chdir '/';
 }
 
-my $was_repeat = !!(`mpc | tail -1` =~ /repeat: *on/);
-
-sub fin()
-{
-	# has to be after `stop`
-	mpc('single off');
-	mpc('repeat on') if $was_repeat;
-	exit;
-}
-
-mpc('stop') if $stop_before;
+$was_repeat = !!(`mpc | tail -1` =~ /repeat: *on/);
 
 $SIG{INT}  = \&fin;
 $SIG{TERM} = \&fin;
 
-for(@ARGV){
+for my $pos (@poses){
 	mpc('single on');
 	mpc('repeat off');
 	sleep 1 while playing();
 
-	my $id = getid($_);
-	print "playing $id ($playlist{$id})\n" unless $bg;
-	mpc("play $id");
-}
-
-if($stop_after){
-	sleep 1 while playing();
-	mpc('stop');
+	print "playing $pos ($playlist{$pos})\n" unless $bg;
+	mpc("play $pos");
 }
 
 fin();
