@@ -12,16 +12,17 @@ sub mpc
 
 	connect(SOCK, $paddr) || die "connect(): $!\n";
 
+	syswrite SOCK, "password \"$MPD_PASS\"\n" if length $MPD_PASS;
 	syswrite SOCK, "$_\n" for @_;
 
-	my $oks = 1 + @_; # +1 for OK MPD...
+	my $oks = 2 + @_; # +1 for OK MPD..., +1 for password
 	my @lines;
 
 	while(<SOCK>){
 		if(/^OK/){
-			if(--$oks <= 0){
-				return @lines;
-			}
+			last if --$oks <= 0;
+		}elsif(/^ACK/){
+			die "mpd error: $_";
 		}else{
 			push @lines, $_;
 		}
@@ -50,17 +51,23 @@ for(@ARGV){
 
 $MPD_HOST = $ENV{MPD_HOST} || 'localhost';
 $MPD_PORT = $ENV{MPD_PORT} || '6600';
+$MPD_PASS = '';
 
-$MPD_HOST = $1 if $MPD_HOST =~ /@(.*)/;
+
+if($MPD_HOST =~ /(.*)@(.*)/){
+	$MPD_PASS = $1;
+	$MPD_HOST = $2;
+}
 
 my @lines = mpc 'status', 'currentsong';
 
 my %opts = (
-	"repeat"  => ['r', 0],
-	"random"  => ['z', 0],
-	"single"  => ['y', 0],
-	"consume" => ['c', 0],
-	"xfade"   => ['x', 0],
+	# name    => sort-index, char-name, value
+	"repeat"  => [0, 'r', 0],
+	"random"  => [1, 'z', 0],
+	"single"  => [2, 'y', 0],
+	"consume" => [3, 'c', 0],
+	"xfade"   => [4, 'x', 0],
 );
 
 my %mpd;
@@ -68,14 +75,11 @@ for(@lines){
 	$mpd{$1} = $2 if /^([^ ]+): (.*)/;
 }
 
-
-for my $mpdk (keys %mpd){
-	for my $optk (keys %opts){
-		$opts{$optk}->[1] = !!$mpd{$mpdk} if $optk eq $mpdk;
-	}
+for my $optk (keys %opts){
+	$opts{$optk}->[2] = !!$mpd{$optk} if $mpd{$optk};
 }
 
-if($mpd{state} eq 'play' || $verbose){
+if($mpd{state} && $mpd{state} eq 'play' || $verbose){
 	if(defined $mpd{Title} and defined $mpd{Artist}){
 		print $mpd{Title};
 		print " - " if length $mpd{Title};
@@ -85,9 +89,9 @@ if($mpd{state} eq 'play' || $verbose){
 	}
 }
 
-for(sort values %opts){
-	if($_->[1]){
-		print $_->[0];
+for(sort { $a->[0] <=> $b->[0] } values %opts){
+	if($_->[2]){
+		print $_->[1];
 	}else{
 		print "-";
 	}
