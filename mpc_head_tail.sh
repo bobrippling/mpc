@@ -26,7 +26,12 @@ then
 	exit 1
 fi
 
+sedexpr="s#\s*$nowplaying\s*\(.*\)#[1;34m\1[m#; s#^\s*[0-9]\+\s*##"
+if ! [ -t 1 ]
+then sedexpr=`echo $sedexpr | sed 's/.*; *//'`
+fi
+
 mpc playlist | \
 	nl | \
 	grep -A $peripheral -B $peripheral "^\s*$nowplaying\b" | \
-	sed 's#^\s*[0-9]\+\s*##'
+	sed "$sedexpr"
