@@ -87,9 +87,8 @@ if(@ARGV == 0){
 %playlist = get_playlist();
 $ARGV[$_] = escape_regex($ARGV[$_]) for 0 .. $#ARGV;
 
-
 for(@ARGV){
-	my $reg = shift;
+	my $reg = $_;
 	my $pos;
 	my $num = 0;
 
@@ -110,7 +109,7 @@ for(@ARGV){
 
 	print "queued \"$playlist{$pos}\" ($pos) for ";
 	if($num){
-		print "pos $pos\n";
+		print "pos " . ($pos - 1 ) . "\n";
 	}else{
 		print "/$reg/\n";
 	}
