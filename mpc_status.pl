@@ -80,13 +80,12 @@ for my $optk (keys %opts){
 }
 
 if($mpd{state} && $mpd{state} eq 'play' || $verbose){
-	if(defined $mpd{Title} and defined $mpd{Artist}){
-		print $mpd{Title};
-		print " - " if length $mpd{Title};
-		print $mpd{Artist}, "\n";
-	}else{
-		print "unknown song\n";
+	print $mpd{Title} if exists $mpd{Title};
+	if(exists $mpd{Artist}){
+		print " - " if exists $mpd{Title};
+		print $mpd{Artist};
 	}
+	print "\n";
 }
 
 for(sort { $a->[0] <=> $b->[0] } values %opts){
