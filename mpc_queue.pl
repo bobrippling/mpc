@@ -8,6 +8,7 @@ my @poses;
 my @argv = @ARGV;
 my $was_repeat;
 my $bg = 0;
+my $noop = 0;
 
 
 sub usage()
@@ -15,6 +16,7 @@ sub usage()
 	my $out = <<"!";
 Usage: $0 [OPT] song1 [song2 [song3...]]
   -f: Fork to background
+  -n: No actual operation
 !
 	print STDERR $out;
 	exit 1;
@@ -32,7 +34,7 @@ sub get_playlist()
 
 sub playing()
 {
-	return system('mpc status|grep playing > /dev/null') == 0;
+	return system('mpc status|grep -F playing > /dev/null') == 0;
 }
 
 sub mpc
@@ -57,10 +59,9 @@ sub escape_regex($)
 
 sub fin()
 {
-	# has to be after `stop`
 	mpc('single off');
 	mpc('repeat on') if $was_repeat;
-	exit;
+	exit 0;
 }
 
 # -- start
@@ -68,6 +69,8 @@ sub fin()
 for(@argv){
 	if($_ eq '-f'){
 		$bg = 1;
+	}elsif($_ eq '-n'){
+		$noop = 1;
 	}else{
 		shift @ARGV if $_ eq '--';
 		last;
@@ -92,6 +95,8 @@ for(@ARGV){
 	my $pos;
 	my $num = 0;
 
+	usage if $_ eq '--help';
+
 	if($reg =~ /^-([0-9]+)$/){
 		$pos = $1 + 1;
 		$num = 1;
@@ -115,11 +120,16 @@ for(@ARGV){
 	}
 }
 
+if($noop){
+	print STDERR "$0: noop\n";
+	exit 0;
+}
+
 if($bg){
 	my $pid = fork();
 	die "fork(): $!\n" unless defined $pid;
 
-	if($pid != 0){
+	if($pid){
 		print "forked to background, pid $pid\n";
 		exit 0;
 	}
@@ -136,12 +146,15 @@ $was_repeat = !!(`mpc | tail -1` =~ /repeat: *on/);
 $SIG{INT}  = \&fin;
 $SIG{TERM} = \&fin;
 
+my($cur, $tot) = (1, 1 + $#poses);
+
 for my $pos (@poses){
 	mpc('single on');
 	mpc('repeat off');
 	sleep 1 while playing();
 
-	print "playing $pos ($playlist{$pos})\n" unless $bg;
+	print "playing $cur/$tot: $pos ($playlist{$pos})\n" unless $bg;
+	$cur++;
 	mpc("play $pos");
 }
 
