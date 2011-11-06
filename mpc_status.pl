@@ -2,6 +2,13 @@
 use warnings;
 use Socket;
 
+sub basename
+{
+	my $f = shift;
+	return $1 if $f =~ m#/([^/]+)$#;
+	return $f;
+}
+
 sub mpc
 {
 	my $saddr = inet_aton($MPD_HOST) || die "no host: $MPD_HOST: $!\n";
@@ -80,11 +87,20 @@ for my $optk (keys %opts){
 }
 
 if($mpd{state} && $mpd{state} eq 'play' || $verbose){
-	print $mpd{Title} if exists $mpd{Title};
-	if(exists $mpd{Artist}){
-		print " - " if exists $mpd{Title};
-		print $mpd{Artist};
+	my $printed = 0;
+
+	if(exists $mpd{Title}){
+		print $mpd{Title};
+		$printed = 1;
 	}
+	if(exists $mpd{Artist}){
+		print " - " if $printed;
+		print $mpd{Artist};
+		$printed = 1;
+	}
+
+	print basename($mpd{file}) unless $printed;
+
 	print "\n";
 }
 
