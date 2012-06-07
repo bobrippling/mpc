@@ -14,7 +14,7 @@ my $noop = 0;
 sub usage()
 {
 	my $out = <<"!";
-Usage: $0 [OPT] song1 [song2 [song3...]]
+Usage: $0 [OPT] song1 [song2 [song3...]] [-id [-id2...]]
   -f: Fork to background
   -n: No actual operation
 !
