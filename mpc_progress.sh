@@ -27,21 +27,22 @@ bar(){
 	printf -- "$str]\r"
 }
 
-trap cleanup SIGINT EXIT
+trap cleanup INT EXIT
 
 mode='bar'
+once=0
 
-if [ $# -eq 1 ]
-then
-	if [ "$1" = '-t' ]
+for arg in $@
+do
+	if [ "$arg" = '-t' ]
 	then mode='text'
-	elif [ "$1" = '-b' ]
+	elif [ "$arg" = '-b' ]
 	then mode='bar'
+	elif [ "$arg" = '-1' ]
+	then once=1
 	else usage
 	fi
-elif [ $# -ne 0 ]
-then usage
-fi
+done
 
 while :
 do
@@ -70,4 +71,7 @@ do
 		fi
 	fi
 	sleep 1
+	if [ $once -eq 1 ]
+	then break
+	fi
 done
