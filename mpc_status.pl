@@ -22,7 +22,7 @@ sub mpc
 	syswrite SOCK, "password \"$MPD_PASS\"\n" if length $MPD_PASS;
 	syswrite SOCK, "$_\n" for @_;
 
-	my $oks = 2 + @_; # +1 for OK MPD..., +1 for password
+	my $oks = 2 + !!$MPD_PASS; # +1 for OK MPD..., +1 for password
 	my @lines;
 
 	while(<SOCK>){
