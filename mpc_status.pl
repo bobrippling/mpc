@@ -19,20 +19,37 @@ sub mpc
 
 	connect(SOCK, $paddr) || die "connect(): $!\n";
 
-	syswrite SOCK, "password \"$MPD_PASS\"\n" if length $MPD_PASS;
-	syswrite SOCK, "$_\n" for @_;
+	sub mpc_wait
+	{
+		syswrite SOCK, "$_\n" for @_;
 
-	my $oks = 2 + !!$MPD_PASS; # +1 for OK MPD..., +1 for password
-	my @lines;
+		#print STDERR "> $_" for @_;
 
-	while(<SOCK>){
-		if(/^OK/){
-			last if --$oks <= 0;
-		}elsif(/^ACK/){
-			die "mpd error: $_";
-		}else{
-			push @lines, $_;
+		my @lines;
+
+		while(<SOCK>){
+			#print STDERR "< $_";
+			if(/^OK/){
+				last;
+			}elsif(/^ACK/){
+				die "mpd error: $_";
+			}else{
+				push @lines, $_;
+			}
 		}
+
+		return @lines;
+	}
+
+	mpc_wait; # wait for initial OK
+
+	if(length $MPD_PASS){
+		mpc_wait "password \"$MPD_PASS\"";
+	}
+
+	my @lines;
+	for my $cmd (@_){
+		push @lines, mpc_wait($cmd);
 	}
 
 	close SOCK;
