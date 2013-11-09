@@ -44,9 +44,9 @@ sub mpc
 	die "$ret = $cmd\n" if $ret;
 }
 
-sub pwtest()
+sub conn_test()
 {
-	my $ret = system "mpc consume off > /dev/null 2>&1";
+	my $ret = system "mpc consume off > /dev/null";
 	return !!$ret;
 }
 
@@ -80,7 +80,7 @@ for(@argv){
 
 $| = 1;
 
-die "$0: need password\n" if pwtest();
+die "$0: couldn't connect\n" if conn_test();
 
 if(@ARGV == 0){
 	print STDERR "$0: reading from stdin...\n";
