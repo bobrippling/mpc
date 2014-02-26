@@ -10,7 +10,7 @@ fin(){
 	mpc single off > /dev/null
 }
 
-trap fin EXIT
+trap fin EXIT INT
 
 {
 	mpc single on
