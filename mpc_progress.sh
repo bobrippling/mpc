@@ -50,9 +50,9 @@ do
 	then printf '\e[2Knot playing\r'
 	else
 		fraction="`mpc|grep playing|awk '{print $3}'`"
-		left_min=` echo $fraction | sed 's/\([^:]\+\):.*/\1/'`
-		left_sec=` echo $fraction | sed 's#[^:]:\([^:]\+\)/.*#\1#'`
-		right_min=`echo $fraction | sed 's#.*/\([^:]\+\):.*#\1#'`
+		left_min=` echo $fraction | sed 's/\([^:]*\):.*/\1/'`
+		left_sec=` echo $fraction | sed 's#[^:]:\([^:]*\)/.*#\1#'`
+		right_min=`echo $fraction | sed 's#.*/\([^:]*\):.*#\1#'`
 		right_sec=`echo $fraction | sed 's#.*/.*:##'`
 
 		left=` expr $left_min  \* 60 + $left_sec`
