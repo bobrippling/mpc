@@ -6,12 +6,12 @@ then
 	exit 1
 fi
 
-vol=`vol.sh`
+vol=`vol`
 for i in `seq $vol -1 0`
 do
-	vol.sh $i > /dev/null
+	vol $i
 	sleep .05
 done
 
 mpc stop
-vol.sh $vol
+vol $vol
