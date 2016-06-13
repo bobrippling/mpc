@@ -6,11 +6,24 @@ then
 	exit 1
 fi
 
-fin(){
-	mpc single off > /dev/null
+old_flags=$(
+mpc status \
+	| tail -1 \
+	| sed 's/: */:/g' \
+	| tr ' ' '\n' \
+	| sed '/^$/d; /n\/a/d'
+)
+
+restore_mpc_state(){
+	for flag in $old_flags
+	do
+		name=${flag%:*}
+		value=${flag#*:}
+		mpc $name $value >/dev/null
+	done
 }
 
-trap fin EXIT INT
+trap restore_mpc_state EXIT INT
 
 {
 	mpc single on
