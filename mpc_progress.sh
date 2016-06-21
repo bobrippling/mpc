@@ -47,7 +47,7 @@ done
 while :
 do
 	if ! mpc | grep playing > /dev/null
-	then printf '\e[2Knot playing\r'
+	then printf '\33[2Knot playing\r'
 	else
 		fraction="`mpc|grep playing|awk '{print $3}'`"
 		left_min=` echo $fraction | sed 's/\([^:]*\):.*/\1/'`
