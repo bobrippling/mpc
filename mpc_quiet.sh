@@ -13,5 +13,5 @@ do
 	sleep .05
 done
 
-mpc --wait stop
+mpc --wait stop >/dev/null
 vol $vol
