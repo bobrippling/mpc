@@ -29,4 +29,4 @@ trap restore_mpc_state EXIT INT
 	mpc single on
 	mpc repeat off
 } > /dev/null
-mpc_wait.sh
+mpc-waitforsong
