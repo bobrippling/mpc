@@ -1,0 +1,47 @@
+#!/bin/sh
+set -e
+
+usage(){
+	echo >&2 "Usage: $0 [-n] regex"
+	exit 2
+}
+
+if test $# -ne 1 && test $# -ne 2
+then usage
+fi
+
+if test $# -eq 1
+then
+	regex="$1"
+	dry=no
+else
+	if test "$1" = -n
+	then
+		regex="$2"
+		dry=yes
+	elif test "$2" = -n
+	then
+		regex="$1"
+		dry=yes
+	else
+		usage
+	fi
+fi
+
+found=$(
+	mpc -f '%name% %artist% %title% %file%' playlist \
+		| nl \
+		| grep -iE "$regex" \
+		| head -1
+)
+
+if test -z "$found"
+then
+	echo >&2 "/$regex/ not found"
+	exit 1
+fi
+
+if test $dry = yes
+then echo "$found"
+else mpc play $(echo "$found" | awk '{print $1}')
+fi
