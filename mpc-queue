@@ -44,6 +44,11 @@ sub mpc
 	die "$ret = $cmd\n" if $ret;
 }
 
+sub sleep_on_mpd
+{
+	mpc('idle player');
+}
+
 sub conn_test()
 {
 	my $ret = system "mpc consume off > /dev/null";
@@ -151,7 +156,7 @@ my($cur, $tot) = (1, 1 + $#poses);
 for my $pos (@poses){
 	mpc('single on');
 	mpc('repeat off');
-	sleep 1 while playing();
+	sleep_on_mpd() while playing();
 
 	print "playing $cur/$tot: $pos ($playlist{$pos})\n" unless $bg;
 	$cur++;
