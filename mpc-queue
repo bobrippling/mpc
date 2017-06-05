@@ -34,7 +34,10 @@ sub get_playlist()
 
 sub playing()
 {
-	return system('mpc status|grep -F playing > /dev/null') == 0;
+	my @status = map { chomp; $_ } `mpc status`;
+	my $stat = $status[1];
+
+	return $stat =~ /\[playing\]/;
 }
 
 sub mpc
