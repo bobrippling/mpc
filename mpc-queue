@@ -32,12 +32,12 @@ sub get_playlist()
 	return %playlist;
 }
 
-sub playing()
+sub playing_or_paused()
 {
 	my @status = map { chomp; $_ } `mpc status`;
 	my $stat = $status[1];
 
-	return $stat =~ /\[playing\]/;
+	return $stat =~ /\[(playing|paused)\]/;
 }
 
 sub mpc
@@ -159,7 +159,7 @@ my($cur, $tot) = (1, 1 + $#poses);
 for my $pos (@poses){
 	mpc('single on');
 	mpc('repeat off');
-	sleep_on_mpd() while playing();
+	sleep_on_mpd() while playing_or_paused();
 
 	print "playing $cur/$tot: $pos ($playlist{$pos})\n" unless $bg;
 	$cur++;
