@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if test $# -ne 0
+then
+	echo >&2 "Usage: $0"
+	exit 2
+fi
+
+mpc -f '%name% %artist% %title% %file%' playlist \
+	| dmenu -i -l 10 \
+	| xargs -I{} mpc-regplay "{}"
