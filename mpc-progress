@@ -1,77 +1,57 @@
-#!/bin/sh
+#!/usr/bin/perl
 
-cleanup(){
-	#echo -n
-	exit 0
+my $cols = 80;
+
+sub bar
+{
+	my $percent = shift;
+	my $val = $percent / 2;
+	my $extra = 50 - $val;
+	my @ents;
+	push @ents, '[';
+	for(; $val > 0; $val--){
+		push @ents, '=';
+	}
+	for(; $extra > 0; $extra--){
+		push @ents, '-';
+	}
+	push @ents, ']';
+	return join '', @ents;
 }
 
-usage(){
-	echo "Usage: $0 [-t|-b]"
-	exit 1
+if(@ARGV){
+	print STDERR "Usage: $0";
+	exit 2;
 }
 
-bar(){
-	val=`expr $1 / 2` # from 0 - 50 (80 cols)
-	extra=`expr 50 - $val`
-	str='['
-	while [ $val -gt 0 ]
-	do
-		str="$str="
-		val=`expr $val - 1`
-	done
-	while [ $extra -gt 0 ]
-	do
-		str="$str-"
-		extra=`expr $extra - 1`
-	done
-	printf -- "$str]\r"
+$| = 1;
+
+while(1){
+	my @out = split /\n/, `mpc`;
+	my @play_lines = grep /(playing|paused)/, @out;
+
+	if(!@play_lines){
+		printf "\33[2Knot playing\r";
+	}else{
+		my $fraction = (split /\s+/, join '', @play_lines)[2];
+
+		my ($cur_min_field, $cur_sec_field, $total_min_field, $total_sec_field)
+			= ($fraction =~ m#([^:]+):([^/]+)/([^:]+):(.*)#);
+
+		my $cur_sec = $cur_sec_field + 60 * $cur_min_field;
+		my $total_sec = $total_sec_field + 60 * $total_min_field;
+
+		my $percent = 0;
+		if($total_sec){
+			$percent = 100 * $cur_sec / $total_sec;
+		}
+
+		my $remaining = $total_sec - $cur_sec;
+		my $remaining_min = $remaining / 60;
+		my $remaining_sec = $remaining % 60;
+
+		printf("%s %d%% %02d:%02d\r", bar($percent), $percent, $remaining_min, $remaining_sec);
+	}
+
+	sleep 1;
 }
-
-trap cleanup INT EXIT
-
-mode='bar'
-once=0
-
-for arg in $@
-do
-	if [ "$arg" = '-t' ]
-	then mode='text'
-	elif [ "$arg" = '-b' ]
-	then mode='bar'
-	elif [ "$arg" = '-1' ]
-	then once=1
-	else usage
-	fi
-done
-
-while :
-do
-	if ! mpc | grep playing > /dev/null
-	then printf '\33[2Knot playing\r'
-	else
-		fraction="`mpc|grep playing|awk '{print $3}'`"
-		left_min=` echo $fraction | sed 's/\([^:]*\):.*/\1/'`
-		left_sec=` echo $fraction | sed 's#[^:]:\([^:]*\)/.*#\1#'`
-		right_min=`echo $fraction | sed 's#.*/\([^:]*\):.*#\1#'`
-		right_sec=`echo $fraction | sed 's#.*/.*:##'`
-
-		left=` expr $left_min  \* 60 + $left_sec`
-		right=`expr $right_min \* 60 + $right_sec`
-
-		if [ $right = 0 ]
-		then percent=0
-		else
-			percent="`expr 100 \* $left / $right`"
-			if [ "$mode" = 'text' ]
-			then
-				printf "$percent%%   \\r"
-			else
-				bar $percent
-			fi
-		fi
-	fi
-	sleep 1
-	if [ $once -eq 1 ]
-	then break
-	fi
-done
