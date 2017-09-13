@@ -54,7 +54,7 @@ sub sleep_on_mpd
 
 sub conn_test()
 {
-	my $ret = system "mpc consume off > /dev/null";
+	my $ret = system "mpc > /dev/null";
 	return !!$ret;
 }
 
