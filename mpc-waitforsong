@@ -18,9 +18,12 @@ sleep_on_mpd(){
 if test $# -eq 0
 then
 	now=`curtrack`
-	while playing -F "$now"
-	do sleep_on_mpd
-	done
+	if test -n "$now"
+	then
+		while playing -F "$now"
+		do sleep_on_mpd
+		done
+	fi
 else
 	while ! playing "$@"
 	do sleep_on_mpd
