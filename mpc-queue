@@ -25,7 +25,7 @@ Usage: $0 [OPT] song1 [song2 [song3...]] [-id [-id2...]]
 sub get_playlist()
 {
 	my %playlist;
-	for(map { chomp; $_ } `mpc playlist | nl`){
+	for(map { chomp; $_ } `mpc -f '%name% %artist% %title% %file%' playlist | nl`){
 		die "couldn't parse \"$_\"\n" unless /^\s+([0-9]+)\s+(.*)$/;
 		$playlist{$1} = $2;
 	}
