@@ -11,7 +11,8 @@ mpc status \
 	| tail -1 \
 	| sed 's/: */:/g' \
 	| tr ' ' '\n' \
-	| sed '/^$/d; /n\/a/d'
+	| sed '/^$/d; /n\/a/d' \
+	| sed '/volume/d'
 )
 
 restore_mpc_state(){
