@@ -31,3 +31,6 @@ trap restore_mpc_state EXIT INT
 	mpc repeat off
 } > /dev/null
 mpc-waitforsong
+
+# mpd may pause after being in single mode, so:
+mpc stop >/dev/null
