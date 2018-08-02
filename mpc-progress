@@ -19,9 +19,21 @@ sub bar
 	return join '', @ents;
 }
 
-if(@ARGV){
-	print STDERR "Usage: $0";
+sub usage
+{
+	print STDERR "Usage: $0 [--exit-if-stopped]\n";
 	exit 2;
+}
+
+my $exit_if_stopped = 0;
+if(@ARGV == 1){
+	if($ARGV[0] eq '--exit-if-stopped'){
+		$exit_if_stopped = 1;
+	}else{
+		usage();
+	}
+}elsif(@ARGV){
+	usage();
 }
 
 $| = 1;
@@ -31,6 +43,7 @@ while(1){
 	my @play_lines = grep /(playing|paused)/, @out;
 
 	if(!@play_lines){
+		last if $exit_if_stopped;
 		printf "\33[2Knot playing\r";
 	}else{
 		my $fraction = (split /\s+/, join '', @play_lines)[2];
