@@ -36,7 +36,7 @@ sub mpc
 {
 	my $cmd = 'mpc --wait ' . join(' ', @_) . ' > /dev/null';
 	my $ret = system $cmd;
-	die "$ret = $cmd\n" if $ret;
+	die "\"$cmd\" failed with code $ret\n" if $ret;
 }
 
 sub conn_test()
