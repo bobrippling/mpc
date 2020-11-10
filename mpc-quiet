@@ -6,7 +6,7 @@ then
 	exit 1
 fi
 
-vol=`vol`
+vol=`vol | head -1 | sed 's/%//'`
 for i in `seq $vol -1 0`
 do
 	vol $i
